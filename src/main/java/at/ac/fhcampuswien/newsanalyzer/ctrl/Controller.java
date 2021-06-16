@@ -4,9 +4,11 @@ import at.ac.fhcampuswien.newsapi.NewsApi;
 import at.ac.fhcampuswien.newsapi.beans.Article;
 import at.ac.fhcampuswien.newsapi.beans.NewsResponse;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,12 +47,11 @@ public class Controller {
 		try{
 			NewsResponse newsResponse = newsApi.getNews();
 			if(newsResponse != null){
-			articles = newsResponse.getArticles();
-			if(articles.isEmpty()){
-				throw new NewsApiException("No article found!");
-			}
-			articles.stream().forEach(article -> System.out.println(article.toString()));
-
+				articles = newsResponse.getArticles();
+				if(articles.isEmpty()){
+					throw new NewsApiException("No article found!");
+				}
+				articles.stream().forEach(article -> System.out.println(article.toString()));
 			}
 		} catch (NewsApiException e){
 			System.out.println(e.getMessage());
@@ -98,19 +99,24 @@ public class Controller {
 							.thenComparing(Comparator.naturalOrder()))
 					.collect(Collectors.toList());
 			System.out.println("Titles sorted: " + titlesSorted);
-		} catch (Exception e){
+		}
+		catch (Exception e){
 			System.out.println("Error with streams: " + e.getMessage());
 		}
 
 		System.out.println();
 
 		try{
-			/*String testUrl = "\0";
-			URL url = new URL(testUrl);
-			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(url.openStream()));*/
-
-
-		} catch(Exception e){
+			URL url = new URL(articles.get(0).getUrl());
+			ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
+			FileOutputStream fileOutputStream = new FileOutputStream("article.html");
+			FileChannel fileChannel = fileOutputStream.getChannel();
+			fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+		}
+		catch(FileNotFoundException e){
+				System.out.println("Error: file not found!");
+		}
+		catch(Exception e){
 			System.out.println("Error with downloading the file: " + e.getMessage());
 		}
 
@@ -118,7 +124,6 @@ public class Controller {
 	}
 
 	public Object getData() {
-		//liefert news response zurück
 		return null;
 	}
 }
